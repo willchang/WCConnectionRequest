@@ -13,6 +13,7 @@ Features
 * Cancelling connections of a certain class
 * Saving data to a file
 * Clean and informative debug output
+* Automatic enabling and disabling of network activity indicator in status bar
 
 Basic Usage Without Subclassing
 -------------------------------
