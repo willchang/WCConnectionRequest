@@ -46,6 +46,7 @@
 						<string key="NSFrameSize">{320, 548}</string>
 						<reference key="NSSuperview" ref="191373211"/>
 						<reference key="NSWindow"/>
+						<reference key="NSNextKeyView"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<bool key="IBUIClipsSubviews">YES</bool>
 						<bool key="IBUIMultipleTouchEnabled">YES</bool>
@@ -246,7 +247,7 @@
 					<object class="IBUILabel" id="94980685">
 						<reference key="NSNextResponder" ref="1044356906"/>
 						<int key="NSvFlags">292</int>
-						<string key="NSFrame">{{20, 222}, {115, 21}}</string>
+						<string key="NSFrame">{{20, 222}, {108, 21}}</string>
 						<reference key="NSSuperview" ref="1044356906"/>
 						<reference key="NSWindow"/>
 						<reference key="NSNextKeyView" ref="145953581"/>
@@ -256,7 +257,7 @@
 						<int key="IBUIContentMode">7</int>
 						<bool key="IBUIUserInteractionEnabled">NO</bool>
 						<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
-						<string key="IBUIText">POST Request</string>
+						<string key="IBUIText">POST request</string>
 						<reference key="IBUITextColor" ref="282914688"/>
 						<nil key="IBUIHighlightedColor"/>
 						<int key="IBUIBaselineAdjustment">0</int>
@@ -270,6 +271,7 @@
 						<string key="NSFrame">{{20, 251}, {280, 70}}</string>
 						<reference key="NSSuperview" ref="1044356906"/>
 						<reference key="NSWindow"/>
+						<reference key="NSNextKeyView"/>
 						<string key="NSReuseIdentifierKey">_NS:9</string>
 						<reference key="IBUIBackgroundColor" ref="397403631"/>
 						<bool key="IBUIClipsSubviews">YES</bool>

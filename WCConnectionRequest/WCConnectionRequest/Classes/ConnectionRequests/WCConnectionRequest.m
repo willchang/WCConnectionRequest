@@ -11,24 +11,19 @@
 static NSMutableDictionary *connectionRequests = nil;
 
 @implementation WCConnectionRequest
-@synthesize completionHandler, failureHandler, progressHandler;
-@synthesize dateStarted, dateFinished;
-@synthesize urlResponse;
-@synthesize fileDestinationPath;
-@synthesize connectionIdentifier;
 @dynamic isActive, duration;
 
 - (void)dealloc {
-	[urlConnection release];
-	[connectionData release];
-	[completionHandler release];
-	[failureHandler release];
-	[progressHandler release];
-	[dateStarted release];
-	[dateFinished release];
-	[urlResponse release];
-	[fileDestinationPath release];
-	[connectionIdentifier release];
+	[_urlConnection release];
+	[_connectionData release];
+	[_completionHandler release];
+	[_failureHandler release];
+	[_progressHandler release];
+	[_dateStarted release];
+	[_dateFinished release];
+	[_urlResponse release];
+	[_fileDestinationPath release];
+	[_connectionIdentifier release];
 	[super dealloc];
 }
 
@@ -77,7 +72,7 @@ static NSMutableDictionary *connectionRequests = nil;
 	return ([requests count] > 0);
 }
 
-+ (void)cancelAllConnectionsOfClass:(Class)connectionRequestClass {
++ (void)cancelConnectionsOfClass:(Class)connectionRequestClass {
 	NSString *key = NSStringFromClass(connectionRequestClass);
 	NSArray *connectionRequests = [[self connectionRequests] objectForKey:key];
 	for (WCConnectionRequest *request in [NSArray arrayWithArray:connectionRequests]) {
@@ -88,7 +83,7 @@ static NSMutableDictionary *connectionRequests = nil;
 + (void)cancelAllConnections {
 	NSMutableDictionary *connectionRequests = [self connectionRequests];
 	for (NSString *classString in [connectionRequests allKeys]) {
-		[self cancelAllConnectionsOfClass:NSClassFromString(classString)];
+		[self cancelConnectionsOfClass:NSClassFromString(classString)];
 	}
 }
 
@@ -117,11 +112,11 @@ static NSMutableDictionary *connectionRequests = nil;
 	
 	NSURLRequest *request = [self request];
 	if (request) {
-		dateStarted = [[NSDate date] retain];
+		_dateStarted = [[NSDate date] retain];
 		
-		connectionIdentifier = [[self generateUUID] copy];
+		_connectionIdentifier = [[self generateUUID] copy];
 		
-		urlConnection = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:YES];
+		_urlConnection = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:YES];
 		[WCConnectionRequest addActiveConnectionRequest:self];
 		
 #if CONNECTION_REQUEST_DEBUG_LOGGING
@@ -135,8 +130,8 @@ static NSMutableDictionary *connectionRequests = nil;
 	if (filePath == nil) {
 		filePath = [NSURL URLWithString:NSTemporaryDirectory()];
 	}
-	[fileDestinationPath release];
-	fileDestinationPath = [filePath retain];
+	[_fileDestinationPath release];
+	_fileDestinationPath = [filePath retain];
 	[self start];
 }
 
@@ -150,27 +145,27 @@ static NSMutableDictionary *connectionRequests = nil;
 #pragma mark - Reset/Cancel
 
 - (void)reset {
-	[dateStarted release];
-	dateStarted = nil;
+	[_dateStarted release];
+	_dateStarted = nil;
 	
-	[dateFinished release];
-	dateFinished = nil;
+	[_dateFinished release];
+	_dateFinished = nil;
 	
-	[connectionData release];
-	connectionData = nil;
+	[_connectionData release];
+	_connectionData = nil;
 	
-	[urlResponse release];
-	urlResponse = nil;
+	[_urlResponse release];
+	_urlResponse = nil;
 	
-	[fileDestinationPath release];
-	fileDestinationPath = nil;
+	[_fileDestinationPath release];
+	_fileDestinationPath = nil;
 	
-	[connectionIdentifier release];
-	connectionIdentifier = nil;
+	[_connectionIdentifier release];
+	_connectionIdentifier = nil;
 	
-	[urlConnection cancel];
-	[urlConnection release];
-	urlConnection = nil;
+	[_urlConnection cancel];
+	[_urlConnection release];
+	_urlConnection = nil;
 	[WCConnectionRequest removeActiveConnectionRequest:self];
 }
 
@@ -192,49 +187,49 @@ static NSMutableDictionary *connectionRequests = nil;
 #pragma mark - Duration
 
 - (NSTimeInterval)duration {
-	return [dateFinished timeIntervalSinceDate:dateStarted];
+	return [_dateFinished timeIntervalSinceDate:_dateStarted];
 }
 
 #pragma mark - Connection Delegate
 
 - (void)connection:(NSURLConnection *)connection didSendBodyData:(NSInteger)bytesWritten totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite {
-	if (self.progressHandler) {
-		self.progressHandler(totalBytesWritten, totalBytesExpectedToWrite, totalBytesWritten / (double)totalBytesExpectedToWrite);
+	if (_progressHandler) {
+		_progressHandler(totalBytesWritten, totalBytesExpectedToWrite, totalBytesWritten / (double)totalBytesExpectedToWrite);
 	}
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
-	[urlResponse release];
-	urlResponse = [response retain];
+	[_urlResponse release];
+	_urlResponse = [response retain];
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)theData {
-	if (connectionData == nil) {
-		connectionData = [[NSMutableData alloc] init];
+	if (_connectionData == nil) {
+		_connectionData = [[NSMutableData alloc] init];
 	}
-	[connectionData appendData:theData];
+	[_connectionData appendData:theData];
 	
-	if (self.progressHandler) {
-		long long totalBytes = [self.urlResponse expectedContentLength];
-		NSUInteger totalBytesWritten = [connectionData length];
+	if (_progressHandler) {
+		long long totalBytes = [_urlResponse expectedContentLength];
+		NSUInteger totalBytesWritten = [_connectionData length];
 		double progress = totalBytesWritten / (double)totalBytes;
-		self.progressHandler(totalBytesWritten, totalBytes, progress);
+		_progressHandler(totalBytesWritten, totalBytes, progress);
 	}
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
-	dateFinished = [[NSDate date] retain];
+	_dateFinished = [[NSDate date] retain];
 
 	// Save data to file path if startAndSaveToPath: was called
-	if (fileDestinationPath) {
-		[[NSFileManager defaultManager] createFileAtPath:[fileDestinationPath absoluteString] contents:connectionData attributes:nil];
+	if (_fileDestinationPath) {
+		[[NSFileManager defaultManager] createFileAtPath:[_fileDestinationPath absoluteString] contents:_connectionData attributes:nil];
 	}
 	
 	// Remove from collection of active connection requests
 	[WCConnectionRequest removeActiveConnectionRequest:self];
 	
 	// Parse connection data
-	id parsedObject = [self parseCompletionData:connectionData];
+	id parsedObject = [self parseCompletionData:_connectionData];
 	
 	// Handle parsed object
 	[self handleResultObject:parsedObject];
@@ -276,7 +271,7 @@ static NSMutableDictionary *connectionRequests = nil;
 	
 	NSMutableString *debugString = [NSMutableString string];
 	[debugString appendFormat:@"\n<<---------------------------------------------- Request %@\n", className];
-	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", self.connectionIdentifier];
+	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", _connectionIdentifier];
 	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[request URL] absoluteString]];
 	[debugString appendFormat:@"\nRequest Header Fields:\n%@\n", [request allHTTPHeaderFields]];
 	NSData *bodyData = [request HTTPBody];
@@ -291,11 +286,11 @@ static NSMutableDictionary *connectionRequests = nil;
 	
 	NSMutableString *debugString = [NSMutableString string];
 	[debugString appendFormat:@"\n<<********************************************* Response %@\n", className];
-	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", self.connectionIdentifier];
-	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[self.urlResponse URL] absoluteString]];
-	if ([self.urlResponse isKindOfClass:[NSHTTPURLResponse class]]) {
-		[debugString appendFormat:@"\nStatus:\n%d\n", [(NSHTTPURLResponse *)self.urlResponse statusCode]];
-		[debugString appendFormat:@"\nResponse Header Fields:\n%@\n", [(NSHTTPURLResponse *)self.urlResponse allHeaderFields]];
+	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", _connectionIdentifier];
+	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[_urlResponse URL] absoluteString]];
+	if ([_urlResponse isKindOfClass:[NSHTTPURLResponse class]]) {
+		[debugString appendFormat:@"\nStatus:\n%d\n", [(NSHTTPURLResponse *)_urlResponse statusCode]];
+		[debugString appendFormat:@"\nResponse Header Fields:\n%@\n", [(NSHTTPURLResponse *)_urlResponse allHeaderFields]];
 	}
 	NSString *parsedObjectString = nil;
 	if ([object isKindOfClass:[NSError class]]) {
@@ -315,7 +310,7 @@ static NSMutableDictionary *connectionRequests = nil;
 	
 	NSMutableString *debugString = [NSMutableString string];
 	[debugString appendFormat:@"\n<<xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx %@ Cancelled\n", className];
-	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", self.connectionIdentifier];
+	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", _connectionIdentifier];
 	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[request URL] absoluteString]];
 	[debugString appendFormat:@"\nRequest Header Fields:\n%@\n", [request allHTTPHeaderFields]];
 	NSData *bodyData = [request HTTPBody];
@@ -383,12 +378,12 @@ static NSMutableDictionary *connectionRequests = nil;
 - (void)handleResultObject:(id)resultObject {
 	// If necessary, subclasses should override this method and then call super to pass data to the completionHandler.
 	if ([resultObject isKindOfClass:[NSError class]]) { // Handling an error here in case a project-contextual error was returned (a successful connection with an undesired result)
-		if (self.failureHandler) {
-			self.failureHandler(resultObject);
+		if (_failureHandler) {
+			_failureHandler(resultObject);
 		}
 	} else {
-		if (self.completionHandler) {
-			self.completionHandler(resultObject);
+		if (_completionHandler) {
+			_completionHandler(resultObject);
 		}
 	}
 }
@@ -400,8 +395,8 @@ static NSMutableDictionary *connectionRequests = nil;
 
 - (void)handleConnectionError:(NSError *)error {
 	// If necessary, subclasses should override this method and then call super to pass data to the failureHandler.
-	if (self.failureHandler) {
-		self.failureHandler(error);
+	if (_failureHandler) {
+		_failureHandler(error);
 	}
 }
 
@@ -426,19 +421,18 @@ static NSMutableDictionary *connectionRequests = nil;
 @end
 
 @implementation WCBasicConnectionRequest
-@synthesize request;
 
 - (void)dealloc {
-	[request release];
+	[_request release];
 	[super dealloc];
 }
 
 - (NSURL *)url {
-	return [request URL];
+	return [_request URL];
 }
 
 - (NSURLRequest *)request { // Override the superclass' request method to return the member variable instead.
-	return request;
+	return _request;
 }
 
 @end

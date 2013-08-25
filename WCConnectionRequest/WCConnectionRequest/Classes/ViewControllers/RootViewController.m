@@ -99,7 +99,7 @@
 }
 
 - (IBAction)cancelDownload {
-	[WCConnectionRequest cancelAllConnectionsOfClass:[WCDownloadFileConnectionRequest class]];
+	[WCConnectionRequest cancelConnectionsOfClass:[WCDownloadFileConnectionRequest class]];
 	self.progressView.progress = 0.0;
 }
 @end

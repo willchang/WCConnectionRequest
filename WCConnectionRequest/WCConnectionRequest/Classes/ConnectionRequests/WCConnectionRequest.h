@@ -68,27 +68,17 @@ typedef enum {
 @end
 
 /*
- Connection Request. Can be used generally with BasicConnectionRequest or by subclassing for separate API calls.
+ Connection Request. Can be used generally with WCBasicConnectionRequest or by subclassing for separate API calls.
  */
 @interface WCConnectionRequest : NSObject <ConnectionRequestProtocol, NSURLConnectionDelegate, NSURLConnectionDataDelegate> {
-	NSURLConnection *urlConnection;
-	NSURLResponse *urlResponse;
-	WCConnectionRequestCompletionBlock completionHandler;
-	WCConnectionRequestFailureBlock failureHandler;
-	WCConnectionRequestProgressBlock progressHandler;
-	NSURL *fileDestinationPath;
-	
-	@private
-	NSMutableData *connectionData;
-	NSDate *dateStarted;
-	NSDate *dateFinished;
-	NSString *connectionIdentifier;
+	NSURLConnection *_urlConnection;
+	NSMutableData *_connectionData;
 }
 
 @property (nonatomic, readonly) NSURLResponse *urlResponse;
 @property (nonatomic, readonly) NSDate *dateStarted;
 @property (nonatomic, readonly) NSDate *dateFinished;
-@property (nonatomic, readonly) NSURL *fileDestinationPath;
+@property (nonatomic, readonly) NSURL *fileDestinationPath;					// A path to the file if it was downloaded (this is set on completion)
 @property (nonatomic, readonly) BOOL isActive;								// Flag for whether the connection is currently in progress
 @property (nonatomic, readonly) NSTimeInterval duration;					// Duration of connection
 @property (nonatomic, readonly) NSString *connectionIdentifier;				// Unique identifier that is created when 'start' is called
@@ -97,7 +87,7 @@ typedef enum {
 @property (nonatomic, copy) WCConnectionRequestProgressBlock progressHandler;
 
 + (BOOL)connectionRequestInUse:(Class)connectionRequestClass;
-+ (void)cancelAllConnectionsOfClass:(Class)connectionRequestClass;
++ (void)cancelConnectionsOfClass:(Class)connectionRequestClass;
 + (void)cancelAllConnections;
 - (void)start;
 - (void)startAndSaveToPath:(NSURL *)filePath; // For saving to caches/temp/documents directories. If nil is provided, data is saved to temp folder with generated UUID for file name.
@@ -116,9 +106,7 @@ typedef enum {
  Basic connection request for when subclassing is not necessary or desired. Useful for one-off connection requests.
  A 'request' property is added so the user can simply set a customized NSURLRequest for the connection to use.
  */
-@interface WCBasicConnectionRequest : WCConnectionRequest {
-	NSURLRequest *request;
-}
+@interface WCBasicConnectionRequest : WCConnectionRequest
 
 @property (nonatomic, retain) NSURLRequest *request;
 
