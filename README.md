@@ -62,23 +62,31 @@ That's it. This connection request can now be used just like any other.
 Optional Methods to Implement When Subclassing
 ----------------------------------------------
 
-* **`- (HTTPMethod)httpMethod;`**
-	* Implement to return the HTTP method of your choice. Default implementation returns `HTTPMethodGet`.
-* **`- (NSMutableURLRequest *)request;`**
-	* Implement to return a more customized `NSURLRequest *` if desired.
-* **`- (NSDictionary *)requestHeaderFields;`**
-	* Implement to return a dictionary with custom request header fields. Default is nil.
-* **`- (NSData *)bodyData;`**
-	* Implement to return `NSData *` that will be put into the body of the request if it is a POST. Default is nil.
-* **`- (id)parseCompletionData:(NSData *)data;`**
-	* See *Handling Completion* below.
-* **`- (void)handleResultObject:(id)resultObject;`**
-	* See *Handling Completion* below.
-* **`- (NSError *)parseError:(NSError *)error;`**
-	* See *Handling Failure* below.
-* **`- (void)handleConnectionError:(NSError *)error;`**
-	* See *Handling Failure* below.
-* **`- (NSInteger)errorCode;`**
+* `- (HTTPMethod)httpMethod;`
+  * Implement to return the HTTP method of your choice. Default implementation returns `HTTPMethodGet`.
+
+* `- (NSMutableURLRequest *)request;`
+  * Implement to return a more customized `NSURLRequest *` if desired.
+
+* `- (NSDictionary *)requestHeaderFields;`
+  * Implement to return a dictionary with custom request header fields. Default is nil.
+
+* `- (NSData *)bodyData;`
+  * Implement to return `NSData *` that will be put into the body of the request if it is a POST. Default is nil.
+
+* `- (id)parseCompletionData:(NSData *)data;`
+  * See *Handling Completion* below.
+
+* `- (void)handleResultObject:(id)resultObject;`
+  * See *Handling Completion* below.
+
+* `- (NSError *)parseError:(NSError *)error;`
+  * See *Handling Failure* below.
+
+* `- (void)handleConnectionError:(NSError *)error;`
+  * See *Handling Failure* below.
+
+* `- (NSInteger)errorCode;`
 	* Return a custom error code for your subclass. At the moment this is not used anywhere internally.
 
 **Handling Completion**
