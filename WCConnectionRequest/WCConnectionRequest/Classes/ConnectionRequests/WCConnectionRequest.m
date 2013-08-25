@@ -233,8 +233,10 @@ static NSMutableDictionary *connectionRequests = nil;
 	// Remove from collection of active connection requests
 	[WCConnectionRequest removeActiveConnectionRequest:self];
 	
-	// Parse and handle connection data
+	// Parse connection data
 	id parsedObject = [self parseCompletionData:connectionData];
+	
+	// Handle parsed object
 	[self handleResultObject:parsedObject];
 	
 	// Debug logging
@@ -261,6 +263,8 @@ static NSMutableDictionary *connectionRequests = nil;
 	
 	// Parse the error
 	NSError *userError = [self parseError:error];
+	
+	// Handle error
 	[self handleConnectionError:userError];
 }
 

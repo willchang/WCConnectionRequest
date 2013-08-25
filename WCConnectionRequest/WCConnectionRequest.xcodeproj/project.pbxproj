@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1D4F225317CA44E300A55424 /* WCIPTestConnectionRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D4F225217CA44E300A55424 /* WCIPTestConnectionRequest.m */; };
+		1D4F225617CA460D00A55424 /* WCJSONPostConnectionRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D4F225517CA460D00A55424 /* WCJSONPostConnectionRequest.m */; };
 		1DE1ADC817C701950074CB8C /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DE1ADC717C701950074CB8C /* UIKit.framework */; };
 		1DE1ADCA17C701950074CB8C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DE1ADC917C701950074CB8C /* Foundation.framework */; };
 		1DE1ADCC17C701950074CB8C /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DE1ADCB17C701950074CB8C /* CoreGraphics.framework */; };
@@ -23,6 +25,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1D4F225117CA44E200A55424 /* WCIPTestConnectionRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WCIPTestConnectionRequest.h; sourceTree = "<group>"; };
+		1D4F225217CA44E300A55424 /* WCIPTestConnectionRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WCIPTestConnectionRequest.m; sourceTree = "<group>"; };
+		1D4F225417CA460D00A55424 /* WCJSONPostConnectionRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WCJSONPostConnectionRequest.h; sourceTree = "<group>"; };
+		1D4F225517CA460D00A55424 /* WCJSONPostConnectionRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WCJSONPostConnectionRequest.m; sourceTree = "<group>"; };
 		1DE1ADC417C701950074CB8C /* WCConnectionRequest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WCConnectionRequest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DE1ADC717C701950074CB8C /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		1DE1ADC917C701950074CB8C /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -148,6 +154,10 @@
 			children = (
 				1DE1ADF617C708710074CB8C /* WCDownloadFileConnectionRequest.h */,
 				1DE1ADF717C708710074CB8C /* WCDownloadFileConnectionRequest.m */,
+				1D4F225117CA44E200A55424 /* WCIPTestConnectionRequest.h */,
+				1D4F225217CA44E300A55424 /* WCIPTestConnectionRequest.m */,
+				1D4F225417CA460D00A55424 /* WCJSONPostConnectionRequest.h */,
+				1D4F225517CA460D00A55424 /* WCJSONPostConnectionRequest.m */,
 			);
 			path = Subclasses;
 			sourceTree = "<group>";
@@ -223,6 +233,8 @@
 				1DE1ADF017C7029B0074CB8C /* RootViewController.m in Sources */,
 				1DE1ADF417C702AA0074CB8C /* WCConnectionRequest.m in Sources */,
 				1DE1ADF817C708710074CB8C /* WCDownloadFileConnectionRequest.m in Sources */,
+				1D4F225317CA44E300A55424 /* WCIPTestConnectionRequest.m in Sources */,
+				1D4F225617CA460D00A55424 /* WCJSONPostConnectionRequest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -335,6 +347,7 @@
 				1DE1ADE317C701950074CB8C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

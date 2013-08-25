@@ -13,8 +13,10 @@
 @property (nonatomic, retain) IBOutlet UIScrollView *contentScrollView;
 @property (nonatomic, retain) IBOutlet UIView *contentView;
 @property (nonatomic, retain) IBOutlet UIProgressView *progressView;
+@property (nonatomic, retain) IBOutlet UITextView *textView1;
+@property (nonatomic, retain) IBOutlet UITextView *textView2;
 
-- (IBAction)start;
-- (IBAction)cancelAll;
+- (IBAction)startDownload;
+- (IBAction)cancelDownload;
 
 @end
