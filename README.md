@@ -41,6 +41,8 @@ Advanced Usage With Subclassing
 
 The full flexibility of **WCConnectionRequest** is seen when creating subclasses and overriding methods to customize behaviour for a specific web service. After subclassing, these connection requests would be used the same way as above (except without setting an `NSURLRequest *` property as the request is handled internally).
 
+Example can be found in the project in this repository.
+
 Implement `- (NSURL *)url` When Subclassing
 -------------------------------------------
 
