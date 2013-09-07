@@ -13,49 +13,56 @@ Features
 * Cancelling connections of a certain class
 * Saving data to a file
 * Clean and informative debug output
+* Automatic enabling and disabling of network activity indicator in status bar
 
 Basic Usage Without Subclassing
 -------------------------------
 
 To create one-off connection requests, simply use the included subclass **WCBasicConnectionRequest** which adds a public property `NSURLRequest *request` to forego the need to subclass.
 
-	// Create connection request
-	WCBasicConnectionRequest *basicRequest = [[WCBasicConnectionRequest alloc] init];
+```objective-c
+// Create connection request
+WCBasicConnectionRequest *basicRequest = [[WCBasicConnectionRequest alloc] init];
 
-	// Set its NSURLRequest
-	basicRequest.request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.google.com"]];
-	
-	// Set its completion handler
-	basicRequest.completionHandler = ^(id object) {
-		NSLog(@"%@", object);
-	};
-	
-	// Start request
-	[basicRequest start];
-	
-	// Release request as it is retained by an internal static dictionary which keeps track of all connection requests
-	[basicRequest release];
+// Set its NSURLRequest
+basicRequest.request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.google.com"]];
+
+// Set its completion handler
+basicRequest.completionHandler = ^(id object) {
+	NSLog(@"%@", object);
+};
+
+// Start request
+[basicRequest start];
+
+// Release request as it is retained by an internal static dictionary which keeps track of all connection requests
+[basicRequest release];
+```
 	
 Advanced Usage With Subclassing
 -------------------------------
 
 The full flexibility of **WCConnectionRequest** is seen when creating subclasses and overriding methods to customize behaviour for a specific web service. After subclassing, these connection requests would be used the same way as above (except without setting an `NSURLRequest *` property as the request is handled internally).
 
+Example can be found in the project in this repository.
+
 Implement `- (NSURL *)url` When Subclassing
 -------------------------------------------
 
 The `- (NSURL *)url` method is the only required method for a subclass to implement. Here's an example:
 
-	@interface MyCustomConnectionRequest : WCConnectionRequest
-	@end
-	
-	@implementation MyCustomConnectionRequest
-	
-	- (NSURL *)url {
-		return [NSURL urlWithString:@"http://api.someWebService.com/some/data"];
-	}
+```objective-c
+@interface MyCustomConnectionRequest : WCConnectionRequest
+@end
 
-	@end
+@implementation MyCustomConnectionRequest
+
+- (NSURL *)url {
+	return [NSURL urlWithString:@"http://api.someWebService.com/some/data"];
+}
+
+@end
+```
 	
 That's it. This connection request can now be used just like any other.
 	
