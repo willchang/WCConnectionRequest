@@ -309,6 +309,7 @@
 		1DE1ADE217C701950074CB8C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "WCConnectionRequest/WCConnectionRequest-Prefix.pch";
 				INFOPLIST_FILE = "WCConnectionRequest/WCConnectionRequest-Info.plist";
@@ -320,6 +321,7 @@
 		1DE1ADE317C701950074CB8C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "WCConnectionRequest/WCConnectionRequest-Prefix.pch";
 				INFOPLIST_FILE = "WCConnectionRequest/WCConnectionRequest-Info.plist";

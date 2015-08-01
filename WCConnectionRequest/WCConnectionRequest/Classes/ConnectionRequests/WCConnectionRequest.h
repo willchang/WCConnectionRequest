@@ -8,8 +8,6 @@
 
 #import <Foundation/Foundation.h>
 
-// TODO: Add XMLConnectionRequest in separate file.
-
 /*
  Misc macros.
  */
@@ -44,7 +42,7 @@ typedef enum {
 /*
  ConnectionRequest protocol. A general list of methods that a ConnectionRequest object and its subclasses implements. No delegate is required.
  */
-@protocol ConnectionRequestProtocol <NSObject>
+@protocol WCConnectionRequestProtocol <NSObject>
 - (void)start;
 - (void)startAndSaveToPath:(NSURL *)filePath;
 - (void)cancel;
@@ -70,7 +68,7 @@ typedef enum {
 /*
  Connection Request. Can be used generally with WCBasicConnectionRequest or by subclassing for separate API calls.
  */
-@interface WCConnectionRequest : NSObject <ConnectionRequestProtocol, NSURLConnectionDelegate, NSURLConnectionDataDelegate> {
+@interface WCConnectionRequest : NSObject <WCConnectionRequestProtocol, NSURLConnectionDelegate, NSURLConnectionDataDelegate> {
 	NSURLConnection *_urlConnection;
 	NSMutableData *_connectionData;
 }
@@ -108,6 +106,6 @@ typedef enum {
  */
 @interface WCBasicConnectionRequest : WCConnectionRequest
 
-@property (nonatomic, retain) NSURLRequest *request;
+@property (nonatomic, strong) NSURLRequest *request;
 
 @end

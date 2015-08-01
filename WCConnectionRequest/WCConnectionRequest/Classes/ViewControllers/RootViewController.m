@@ -15,7 +15,6 @@
 
 - (void)dealloc {
 	[self releaseOutlets];
-	[super dealloc];
 }
 
 - (void)releaseOutlets {
@@ -57,7 +56,6 @@
 		
 	};
 	[basicRequest start];
-	[basicRequest release];
 }
 
 - (void)downloadFile {
@@ -71,7 +69,6 @@
 		self.progressView.progressTintColor = [UIColor greenColor];
 	};
 	[downloadFileRequest start];
-	[downloadFileRequest release];
 }
 
 - (void)runJSONRequest {
@@ -80,7 +77,6 @@
 		self.textView1.text = [object description];
 	};
 	[jsonRequest start];
-	[jsonRequest release];
 }
 
 - (void)runPOSTRequest {
@@ -89,7 +85,6 @@
 		self.textView2.text = [object description];
 	};
 	[postRequest start];
-	[postRequest release];
 }
 
 #pragma mark - Actions

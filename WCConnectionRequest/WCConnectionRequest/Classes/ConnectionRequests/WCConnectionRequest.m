@@ -13,19 +13,6 @@ static NSMutableDictionary *connectionRequests = nil;
 @implementation WCConnectionRequest
 @dynamic isActive, duration;
 
-- (void)dealloc {
-	[_urlConnection release];
-	[_connectionData release];
-	[_completionHandler release];
-	[_failureHandler release];
-	[_progressHandler release];
-	[_dateStarted release];
-	[_dateFinished release];
-	[_urlResponse release];
-	[_fileDestinationPath release];
-	[_connectionIdentifier release];
-	[super dealloc];
-}
 
 #pragma mark - ConnectionRequests / In Use
 
@@ -42,7 +29,6 @@ static NSMutableDictionary *connectionRequests = nil;
 	if (requests == nil) {
 		requests = [[NSMutableArray alloc] initWithCapacity:1];
 		[[self connectionRequests] setObject:requests forKey:className];
-		[requests release];
 	}
 	[requests addObject:connectionRequest];
 	
@@ -112,7 +98,7 @@ static NSMutableDictionary *connectionRequests = nil;
 	
 	NSURLRequest *request = [self request];
 	if (request) {
-		_dateStarted = [[NSDate date] retain];
+		_dateStarted = [NSDate date];
 		
 		_connectionIdentifier = [[self generateUUID] copy];
 		
@@ -130,8 +116,7 @@ static NSMutableDictionary *connectionRequests = nil;
 	if (filePath == nil) {
 		filePath = [NSURL URLWithString:NSTemporaryDirectory()];
 	}
-	[_fileDestinationPath release];
-	_fileDestinationPath = [filePath retain];
+	_fileDestinationPath = filePath;
 	[self start];
 }
 
@@ -139,32 +124,20 @@ static NSMutableDictionary *connectionRequests = nil;
 	CFUUIDRef uuidRef = CFUUIDCreate(NULL);
 	CFStringRef uuidString = CFUUIDCreateString(NULL, uuidRef);
 	CFRelease(uuidRef);
-	return [(NSString *)uuidString autorelease];
+	return (__bridge NSString *)uuidString;
 }
 
 #pragma mark - Reset/Cancel
 
 - (void)reset {
-	[_dateStarted release];
 	_dateStarted = nil;
-	
-	[_dateFinished release];
 	_dateFinished = nil;
-	
-	[_connectionData release];
 	_connectionData = nil;
-	
-	[_urlResponse release];
 	_urlResponse = nil;
-	
-	[_fileDestinationPath release];
 	_fileDestinationPath = nil;
-	
-	[_connectionIdentifier release];
 	_connectionIdentifier = nil;
 	
 	[_urlConnection cancel];
-	[_urlConnection release];
 	_urlConnection = nil;
 	[WCConnectionRequest removeActiveConnectionRequest:self];
 }
@@ -199,8 +172,7 @@ static NSMutableDictionary *connectionRequests = nil;
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
-	[_urlResponse release];
-	_urlResponse = [response retain];
+	_urlResponse = response;
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)theData {
@@ -218,7 +190,7 @@ static NSMutableDictionary *connectionRequests = nil;
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
-	_dateFinished = [[NSDate date] retain];
+	_dateFinished = [NSDate date];
 
 	// Save data to file path if startAndSaveToPath: was called
 	if (_fileDestinationPath) {
@@ -275,7 +247,7 @@ static NSMutableDictionary *connectionRequests = nil;
 	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[request URL] absoluteString]];
 	[debugString appendFormat:@"\nRequest Header Fields:\n%@\n", [request allHTTPHeaderFields]];
 	NSData *bodyData = [request HTTPBody];
-	[debugString appendFormat:@"\nRequest Body:\n%@\n", (bodyData != nil ? [[[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding] autorelease] : nil)];
+	[debugString appendFormat:@"\nRequest Body:\n%@\n", (bodyData != nil ? [[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding] : nil)];
 	[debugString appendFormat:@"\n---------------------------------------------->> Request %@", className];
 	NSLog(@"%@", debugString);
 }
@@ -314,7 +286,7 @@ static NSMutableDictionary *connectionRequests = nil;
 	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[request URL] absoluteString]];
 	[debugString appendFormat:@"\nRequest Header Fields:\n%@\n", [request allHTTPHeaderFields]];
 	NSData *bodyData = [request HTTPBody];
-	[debugString appendFormat:@"\nRequest Body:\n%@\n", (bodyData != nil ? [[[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding] autorelease] : nil)];
+	[debugString appendFormat:@"\nRequest Body:\n%@\n", (bodyData != nil ? [[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding] : nil)];
 	[debugString appendFormat:@"\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> %@ Cancelled", className];
 	NSLog(@"%@", debugString);
 }
@@ -422,10 +394,6 @@ static NSMutableDictionary *connectionRequests = nil;
 
 @implementation WCBasicConnectionRequest
 
-- (void)dealloc {
-	[_request release];
-	[super dealloc];
-}
 
 - (NSURL *)url {
 	return [_request URL];

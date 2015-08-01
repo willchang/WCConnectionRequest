@@ -10,11 +10,11 @@
 
 @interface RootViewController : UIViewController
 
-@property (nonatomic, retain) IBOutlet UIScrollView *contentScrollView;
-@property (nonatomic, retain) IBOutlet UIView *contentView;
-@property (nonatomic, retain) IBOutlet UIProgressView *progressView;
-@property (nonatomic, retain) IBOutlet UITextView *textView1;
-@property (nonatomic, retain) IBOutlet UITextView *textView2;
+@property (nonatomic, strong) IBOutlet UIScrollView *contentScrollView;
+@property (nonatomic, strong) IBOutlet UIView *contentView;
+@property (nonatomic, strong) IBOutlet UIProgressView *progressView;
+@property (nonatomic, strong) IBOutlet UITextView *textView1;
+@property (nonatomic, strong) IBOutlet UITextView *textView2;
 
 - (IBAction)startDownload;
 - (IBAction)cancelDownload;
