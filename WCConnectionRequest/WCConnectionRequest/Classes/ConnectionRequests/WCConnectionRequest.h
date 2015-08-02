@@ -11,17 +11,8 @@
 /*
  Misc macros.
  */
-#define API_ERROR(__code__,__message__) [NSError errorWithDomain:@"ConnectionRequestDomain" code:__code__ userInfo:@{NSLocalizedDescriptionKey : __message__}]
+#define API_ERROR(__domain__,__code__,__message__) [NSError errorWithDomain:__domain__ code:__code__ userInfo:@{NSLocalizedDescriptionKey : __message__}]
 #define ERROR_CODE_CONNECTION_REQUEST_DEFAULT 31337
-
-/*
- Console output.
- */
-#if DEBUG
-	#define CONNECTION_REQUEST_DEBUG_LOGGING 1
-#else
-	#define CONNECTION_REQUEST_DEBUG_LOGGING 0
-#endif
 
 /*
  Block definitions.
@@ -43,7 +34,7 @@ typedef enum {
  ConnectionRequest protocol. A general list of methods that a ConnectionRequest object and its subclasses implements. No delegate is required.
  */
 @protocol WCConnectionRequestProtocol <NSObject>
-- (void)start;
+- (void)startDataTask;
 - (void)startAndSaveToPath:(NSURL *)filePath;
 - (void)cancel;
 
@@ -68,10 +59,7 @@ typedef enum {
 /*
  Connection Request. Can be used generally with WCBasicConnectionRequest or by subclassing for separate API calls.
  */
-@interface WCConnectionRequest : NSObject <WCConnectionRequestProtocol, NSURLConnectionDelegate, NSURLConnectionDataDelegate> {
-	NSURLConnection *_urlConnection;
-	NSMutableData *_connectionData;
-}
+@interface WCConnectionRequest : NSObject <WCConnectionRequestProtocol, NSURLConnectionDelegate, NSURLConnectionDataDelegate>
 
 @property (nonatomic, readonly) NSURLResponse *urlResponse;
 @property (nonatomic, readonly) NSDate *dateStarted;
@@ -80,6 +68,7 @@ typedef enum {
 @property (nonatomic, readonly) BOOL isActive;								// Flag for whether the connection is currently in progress
 @property (nonatomic, readonly) NSTimeInterval duration;					// Duration of connection
 @property (nonatomic, readonly) NSString *connectionIdentifier;				// Unique identifier that is created when 'start' is called
+@property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, copy) WCConnectionRequestCompletionBlock completionHandler;
 @property (nonatomic, copy) WCConnectionRequestFailureBlock failureHandler;
 @property (nonatomic, copy) WCConnectionRequestProgressBlock progressHandler;
@@ -87,7 +76,7 @@ typedef enum {
 + (BOOL)connectionRequestInUse:(Class)connectionRequestClass;
 + (void)cancelConnectionsOfClass:(Class)connectionRequestClass;
 + (void)cancelAllConnections;
-- (void)start;
+- (void)startDataTask;
 - (void)startAndSaveToPath:(NSURL *)filePath; // For saving to caches/temp/documents directories. If nil is provided, data is saved to temp folder with generated UUID for file name.
 - (void)cancel;
 
