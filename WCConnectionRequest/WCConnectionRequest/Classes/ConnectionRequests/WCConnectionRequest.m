@@ -10,19 +10,21 @@
 
 #import "WCConnectionRequest.h"
 
-static NSMutableDictionary *connectionRequests = nil;
-
 @interface WCConnectionRequest()
+@property (nonatomic, copy) WCConnectionRequestCompletionHandler completionHandler;
+@property (nonatomic, copy) WCConnectionRequestProgressHandler progressHandler;
+@property (nonatomic, strong) NSMutableData *data;
 @property (nonatomic, strong) NSURLSessionTask *sessionTask;
+@property (nonatomic, strong) NSURL *downloadedFileLocation;
 @end
 
 @implementation WCConnectionRequest
 @dynamic isActive, duration;
 
-
 #pragma mark - ConnectionRequests / In Use
 
 + (NSMutableDictionary *)connectionRequests {
+	static NSMutableDictionary *connectionRequests = nil;
 	if (connectionRequests == nil) {
 		connectionRequests = [[NSMutableDictionary alloc] init];
 	}
@@ -83,7 +85,7 @@ static NSMutableDictionary *connectionRequests = nil;
 
 - (NSURLSession *)session {
 	if (_session == nil) {
-		_session = [NSURLSession sharedSession];
+		_session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:self delegateQueue:nil];
 	}
 	return _session;
 }
@@ -99,6 +101,8 @@ static NSMutableDictionary *connectionRequests = nil;
 		case HTTPMethodPut:
 			string = @"PUT";
 			break;
+		case HTTPMethodDelete:
+			string = @"DELETE";
 		default:
 			break;
 	}
@@ -108,71 +112,78 @@ static NSMutableDictionary *connectionRequests = nil;
 
 #pragma mark - Start
 
-- (void)startDataTask {
+- (void)prepareStart {
+	_dateStarted = [NSDate date];
+	_connectionIdentifier = [[self generateUUID] copy];
+}
+
+- (void)startDataTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler {
 	[self reset];
 	
 	NSURLRequest *request = [self request];
 	if (request) {
-		_dateStarted = [NSDate date];
-		_connectionIdentifier = [[self generateUUID] copy];
+		[self prepareStart];
 		
-		self.sessionTask = [self.session dataTaskWithRequest:request completionHandler:^(NSData * __nullable data, NSURLResponse * __nullable response, NSError * __nullable error) {
-			_dateFinished = [NSDate date];
-			_urlResponse = response;
-			
-			// Remove from collection of active connection requests
-			[WCConnectionRequest removeActiveConnectionRequest:self];
-			
-			dispatch_async(dispatch_get_main_queue(), ^{
-				id parsedObject = nil;
-				
-				if (error == nil) {
-					// Parse connection data
-					parsedObject = [self parseCompletionData:data];
-					
-					// Handle parsed object
-					[self handleResultObject:parsedObject];
-					
-					// Broadcast notification that this API call finished
-					NSString *notificationName = [NSStringFromClass([self class]) stringByAppendingString:@"DidFinishNotification"];
-					NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-											  self, @"WCConnectionRequest",
-											  parsedObject, @"ParsedObject",
-											  nil];
-					NSNotification *finishedNotification = [NSNotification notificationWithName:notificationName object:nil userInfo:userInfo];
-					[[NSNotificationCenter defaultCenter] postNotification:finishedNotification];
-				} else {
-					[WCConnectionRequest removeActiveConnectionRequest:self];
-					
-					parsedObject = error;
-					
-					// Parse the error
-					NSError *userError = [self parseError:error];
-					
-					// Handle error
-					[self handleConnectionError:userError];
-				}
-#if DEBUG
-				[self logResponseWithRequest:request data:data];
-#endif
-			});
-		}];
+		self.data = [NSMutableData data];
+		self.completionHandler = completionHandler;
+		self.sessionTask = [self.session dataTaskWithRequest:request];
 		
-		[self.sessionTask resume];
-		[WCConnectionRequest addActiveConnectionRequest:self];
+		[self doStart:request];
+	} else {
 #if DEBUG
-		[self logRequest:request];
+		NSLog(@"Request is nil.");
 #endif
 	}
 }
 
-- (void)startAndSaveToPath:(NSURL *)filePath {
-	// If no filePath provided, create UUID for file name and save to temp folder
-	if (filePath == nil) {
-		filePath = [NSURL URLWithString:NSTemporaryDirectory()];
+- (void)startDownloadTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler {
+	[self reset];
+	
+	NSURLRequest *request = [self request];
+	if (request) {
+		[self prepareStart];
+		
+		self.progressHandler = progressHandler;
+		self.completionHandler = completionHandler;
+		self.sessionTask = [self.session downloadTaskWithRequest:request];
+		
+		[self doStart:request];
+	} else {
+#if DEBUG
+		NSLog(@"Request is nil.");
+#endif
 	}
-	_fileDestinationPath = filePath;
-//	[self start];
+}
+
+- (void)startUploadTaskWithData:(NSData *)data orFile:(NSURL *)file completion:(void (^)(NSError *error))completion {
+	[self reset];
+	
+	NSURLRequest *request = [self request];
+	if (request) {
+		[self prepareStart];
+		
+		void (^completionHandler)(NSData * __nullable data, NSURLResponse * __nullable response, NSError * __nullable error) = ^(NSData * __nullable data, NSURLResponse * __nullable response, NSError * __nullable error) {
+			[self connectionFinishedWithResponse:response];
+		};
+		
+		if (data.length) {
+			self.sessionTask = [self.session uploadTaskWithRequest:request fromData:data completionHandler:completionHandler];
+		} else if (file) {
+			self.sessionTask = [self.session uploadTaskWithRequest:request fromFile:file completionHandler:completionHandler];
+		}
+
+		[self doStart:request];
+	} else {
+#if DEBUG
+		NSLog(@"Request is nil.");
+#endif
+	}
+}
+
+- (void)doStart:(NSURLRequest *)request {
+	[self.sessionTask resume];
+	[WCConnectionRequest addActiveConnectionRequest:self];
+	[self logRequest:request];
 }
 
 - (NSString *)generateUUID {
@@ -182,13 +193,21 @@ static NSMutableDictionary *connectionRequests = nil;
 	return (__bridge NSString *)uuidString;
 }
 
+#pragma mark - Finish
+
+- (void)connectionFinishedWithResponse:(NSURLResponse *)response {
+	_dateFinished = [NSDate date];
+	_urlResponse = response;
+	[WCConnectionRequest removeActiveConnectionRequest:self];
+}
+
 #pragma mark - Reset/Cancel
 
 - (void)reset {
+	self.data = nil;
 	_dateStarted = nil;
 	_dateFinished = nil;
 	_urlResponse = nil;
-	_fileDestinationPath = nil;
 	_connectionIdentifier = nil;
 	[self.sessionTask cancel];
 	self.sessionTask = nil;
@@ -196,10 +215,7 @@ static NSMutableDictionary *connectionRequests = nil;
 }
 
 - (void)cancel {
-#if DEBUG
 	[self logCancellationWithRequest:[self request]];
-#endif
-	
 	[self reset];
 }
 
@@ -219,6 +235,7 @@ static NSMutableDictionary *connectionRequests = nil;
 #pragma mark - Debug Logging
 
 - (void)logRequest:(NSURLRequest *)request {
+#if DEBUG
 	NSString *className = NSStringFromClass([self class]);
 	
 	NSMutableString *debugString = [NSMutableString string];
@@ -232,9 +249,11 @@ static NSMutableDictionary *connectionRequests = nil;
 	[debugString appendFormat:@"\nRequest Body:\n%@\n", (bodyData != nil ? [[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding] : nil)];
 	[debugString appendFormat:@"\n---------------------------------------------->> Request %@", className];
 	NSLog(@"%@", debugString);
+#endif
 }
 
-- (void)logResponseWithRequest:(NSURLRequest *)request data:(id)object {
+- (void)logResponseWithRequest:(NSURLRequest *)request data:(id)data parsedObject:(id)parsedObject error:(NSError *)error {
+#if DEBUG
 	NSString *className = NSStringFromClass([self class]);
 	
 	NSMutableString *debugString = [NSMutableString string];
@@ -245,19 +264,31 @@ static NSMutableDictionary *connectionRequests = nil;
 		[debugString appendFormat:@"\nStatus:\n%ld\n", [(NSHTTPURLResponse *)_urlResponse statusCode]];
 		[debugString appendFormat:@"\nResponse Header Fields:\n%@\n", [(NSHTTPURLResponse *)_urlResponse allHeaderFields]];
 	}
+	
 	NSString *parsedObjectString = nil;
-	if ([object isKindOfClass:[NSError class]]) {
-		parsedObjectString = object;
+	if ([data isKindOfClass:[NSError class]]) {
+		parsedObjectString = data;
+	} else if ([data isKindOfClass:[NSData class]]) {
+		parsedObjectString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+		
+		if (parsedObjectString == nil) {
+			parsedObjectString = [NSString stringWithFormat:@"NSData with length %ld", ((NSData *)data).length];
+		}
 	} else {
-		parsedObjectString = [[NSString alloc] initWithData:object encoding:NSUTF8StringEncoding];
+		parsedObjectString = [data description];
 	}
-	[debugString appendFormat:@"\nResult Object:\n%@\n", parsedObjectString];
+	[debugString appendFormat:@"\nData:\n%@\n", parsedObjectString];
+	
+	[debugString appendFormat:@"\nParsed Object:\n%@: %@\n", [parsedObject class], parsedObject];
+	[debugString appendFormat:@"\nError:\n%@\n", error];
 	[debugString appendFormat:@"\nDuration: %f", [self duration]];
 	[debugString appendFormat:@"\n*********************************************>> Response %@", className];
 	NSLog(@"%@", debugString);
+#endif
 }
 
 - (void)logCancellationWithRequest:(NSURLRequest *)request {
+#if DEBUG
 	NSString *className = NSStringFromClass([self class]);
 	
 	NSMutableString *debugString = [NSMutableString string];
@@ -271,6 +302,7 @@ static NSMutableDictionary *connectionRequests = nil;
 	[debugString appendFormat:@"\nRequest Body:\n%@\n", (bodyData != nil ? [[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding] : nil)];
 	[debugString appendFormat:@"\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx>> %@ Cancelled", className];
 	NSLog(@"%@", debugString);
+#endif
 }
 
 #pragma mark - REQUIRED METHODS TO BE IMPLEMENTED BY SUBCLASS
@@ -329,34 +361,83 @@ static NSMutableDictionary *connectionRequests = nil;
 	return data;
 }
 
-- (void)handleResultObject:(id)resultObject {
-	// If necessary, subclasses should override this method and then call super to pass data to the completionHandler.
-	if ([resultObject isKindOfClass:[NSError class]]) { // Handling an error here in case a project-contextual error was returned (a successful connection with an undesired result)
-		if (_failureHandler) {
-			_failureHandler(resultObject);
-		}
-	} else {
-		if (_completionHandler) {
-			_completionHandler(resultObject);
-		}
-	}
-}
-
 - (NSError *)parseError:(NSError *)error {
 	// Default implementation: pass the same error to the handler. Subclasses could create a user friendly error instead.
 	return error;
 }
 
-- (void)handleConnectionError:(NSError *)error {
-	// If necessary, subclasses should override this method and then call super to pass data to the failureHandler.
-	if (_failureHandler) {
-		_failureHandler(error);
+#pragma mark - NSURLSessionDelegate
+
+// Subclasses can implement delegate methods as needed.
+
+#pragma mark - NSURLSessionTaskDelegate
+
+- (void)URLSession:(nonnull NSURLSession *)session dataTask:(nonnull NSURLSessionDataTask *)dataTask didReceiveData:(nonnull NSData *)data {
+	[self.data appendData:data];
+}
+
+- (void)URLSession:(nonnull NSURLSession *)session dataTask:(nonnull NSURLSessionDataTask *)dataTask didReceiveResponse:(nonnull NSURLResponse *)response completionHandler:(nonnull void (^)(NSURLSessionResponseDisposition))completionHandler {
+	_urlResponse = response;
+}
+
+- (void)URLSession:(nonnull NSURLSession *)session task:(nonnull NSURLSessionTask *)task didCompleteWithError:(nullable NSError *)error {
+	[self connectionFinishedWithResponse:task.response];
+	
+	__block id parsedObject = nil;
+	__block NSError *urlSessionError = error;
+	
+	if ([self.sessionTask isKindOfClass:[NSURLSessionDownloadTask class]]) {
+		parsedObject = self.downloadedFileLocation;
+	} else if (error == nil) {
+		parsedObject = [self parseCompletionData:self.data];
+	}
+	
+	[self logResponseWithRequest:task.currentRequest data:self.data parsedObject:parsedObject error:error];
+	
+	dispatch_async(dispatch_get_main_queue(), ^{
+		/*
+		// Broadcast notification that this API call finished
+		NSString *notificationName = [NSStringFromClass([self class]) stringByAppendingString:@"DidFinishNotification"];
+		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+								  self, @"WCConnectionRequest",
+								  parsedObject, @"ParsedObject",
+								  nil];
+		NSNotification *finishedNotification = [NSNotification notificationWithName:notificationName object:nil userInfo:userInfo];
+		[[NSNotificationCenter defaultCenter] postNotification:finishedNotification];
+		 */
+		
+		if (self.completionHandler) {
+			if ([parsedObject isKindOfClass:[NSError class]]) {
+				urlSessionError = parsedObject;
+				parsedObject = nil;
+			}
+			self.completionHandler(urlSessionError, parsedObject);
+		}
+	});
+}
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
+	if (self.progressHandler) {
+		self.progressHandler(totalBytesSent, totalBytesExpectedToSend, (double)totalBytesSent / (double)totalBytesExpectedToSend);
 	}
 }
 
-- (NSInteger)errorCode {
-	// Default error code. This method is currently not used by default to show or present errors. It can be used for convenience if subclasses implement it and handle errors.
-	return ERROR_CODE_CONNECTION_REQUEST_DEFAULT;
+#pragma mark - NSURLSessionDataDelegate
+
+// Subclasses can implement delegate methods as needed.
+
+#pragma mark - NSURLSessionDownloadDelegate
+
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location {
+	self.downloadedFileLocation = location;
+}
+
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
+	if (self.progressHandler) {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			self.progressHandler(totalBytesWritten, totalBytesExpectedToWrite, (double)totalBytesWritten / (double)totalBytesExpectedToWrite);
+		});
+	}
 }
 
 @end

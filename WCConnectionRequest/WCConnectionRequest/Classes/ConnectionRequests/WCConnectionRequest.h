@@ -15,11 +15,11 @@
 #define ERROR_CODE_CONNECTION_REQUEST_DEFAULT 31337
 
 /*
- Block definitions.
+ Completion blocks.
  */
-typedef void (^WCConnectionRequestCompletionBlock)(id object);
-typedef void (^WCConnectionRequestFailureBlock)(NSError *error);
-typedef void (^WCConnectionRequestProgressBlock)(NSInteger bytesSoFar, NSInteger totalBytes, double progress);
+typedef void (^WCConnectionRequestCompletionHandler)(NSError *error, id object);
+typedef void (^WCConnectionRequestProgressHandler)(NSInteger bytesSoFar, NSInteger totalBytes, double progress);
+
 
 /*
  HTTP methods.
@@ -28,14 +28,16 @@ typedef enum {
 	HTTPMethodGet,
 	HTTPMethodPost,
 	HTTPMethodPut,
+	HTTPMethodDelete,
 } HTTPMethod;
 
 /*
  ConnectionRequest protocol. A general list of methods that a ConnectionRequest object and its subclasses implements. No delegate is required.
  */
 @protocol WCConnectionRequestProtocol <NSObject>
-- (void)startDataTask;
-- (void)startAndSaveToPath:(NSURL *)filePath;
+- (void)startDataTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler;
+- (void)startDownloadTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
+- (void)startUploadTaskWithData:(NSData *)data orFile:(NSURL *)file completion:(void (^)(NSError *error))completion;
 - (void)cancel;
 
 /*
@@ -53,31 +55,29 @@ typedef enum {
 - (void)handleResultObject:(id)resultObject;
 - (NSError *)parseError:(NSError *)error;
 - (void)handleConnectionError:(NSError *)error;
-- (NSInteger)errorCode;
 @end
 
 /*
  Connection Request. Can be used generally with WCBasicConnectionRequest or by subclassing for separate API calls.
  */
-@interface WCConnectionRequest : NSObject <WCConnectionRequestProtocol, NSURLConnectionDelegate, NSURLConnectionDataDelegate>
+@interface WCConnectionRequest : NSObject <WCConnectionRequestProtocol, NSURLSessionDelegate, NSURLSessionTaskDelegate, NSURLSessionDataDelegate, NSURLSessionDownloadDelegate>
 
 @property (nonatomic, readonly) NSURLResponse *urlResponse;
 @property (nonatomic, readonly) NSDate *dateStarted;
 @property (nonatomic, readonly) NSDate *dateFinished;
-@property (nonatomic, readonly) NSURL *fileDestinationPath;					// A path to the file if it was downloaded (this is set on completion)
 @property (nonatomic, readonly) BOOL isActive;								// Flag for whether the connection is currently in progress
 @property (nonatomic, readonly) NSTimeInterval duration;					// Duration of connection
 @property (nonatomic, readonly) NSString *connectionIdentifier;				// Unique identifier that is created when 'start' is called
 @property (nonatomic, strong) NSURLSession *session;
-@property (nonatomic, copy) WCConnectionRequestCompletionBlock completionHandler;
-@property (nonatomic, copy) WCConnectionRequestFailureBlock failureHandler;
-@property (nonatomic, copy) WCConnectionRequestProgressBlock progressHandler;
 
 + (BOOL)connectionRequestInUse:(Class)connectionRequestClass;
 + (void)cancelConnectionsOfClass:(Class)connectionRequestClass;
 + (void)cancelAllConnections;
-- (void)startDataTask;
-- (void)startAndSaveToPath:(NSURL *)filePath; // For saving to caches/temp/documents directories. If nil is provided, data is saved to temp folder with generated UUID for file name.
+
+- (void)startDataTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler;
+- (void)startDownloadTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
+- (void)startUploadTaskWithData:(NSData *)data orFile:(NSURL *)file completion:(void (^)(NSError *error))completion;
+
 - (void)cancel;
 
 @end
