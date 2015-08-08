@@ -6,12 +6,12 @@
 //  Copyright (c) 2013 William Chang. All rights reserved.
 //
 
-#import "WCIPTestConnectionRequest.h"
+#import "WCJSONTestConnectionRequest.h"
 
-@implementation WCIPTestConnectionRequest
+@implementation WCJSONTestConnectionRequest
 
 - (NSURL *)url {
-	return [NSURL URLWithString:@"http://ip.jsontest.com/"];
+	return [NSURL URLWithString:@"https://api.github.com/users/willchang/repos"];
 }
 
 @end

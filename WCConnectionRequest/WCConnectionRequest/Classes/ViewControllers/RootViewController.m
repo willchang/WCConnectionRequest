@@ -8,8 +8,12 @@
 
 #import "RootViewController.h"
 #import "WCDownloadFileConnectionRequest.h"
-#import "WCIPTestConnectionRequest.h"
-#import "WCJSONPostConnectionRequest.h"
+#import "WCJSONTestConnectionRequest.h"
+#import "WCPostConnectionRequest.h"
+
+@interface RootViewController() <NSURLSessionTaskDelegate>
+
+@end
 
 @implementation RootViewController
 
@@ -21,13 +25,20 @@
 //	[self runBasicRequest];
 	
 	// Downloading a file
-	[self downloadFile];
+//	[self downloadFile];
 	
 	// Request that returns JSON
 //	[self runJSONRequest];
 	
 	// POST request
-//	[self runPOSTRequest];
+	[self runPOSTRequest];
+	
+//	NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:self delegateQueue:nil];
+//	[[session dataTaskWithURL:[NSURL URLWithString:@"https://api.github.com/users/willchang/repos"]] resume];
+}
+
+- (void)URLSession:(nonnull NSURLSession *)session task:(nonnull NSURLSessionTask *)task didCompleteWithError:(nullable NSError *)error {
+	NSLog(@"completed");
 }
 
 - (void)setupScrollView {
@@ -40,7 +51,7 @@
 - (void)runBasicRequest {
 	WCBasicConnectionRequest *basicRequest = [[WCBasicConnectionRequest alloc] init];
 	basicRequest.request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.google.com"]];
-	[basicRequest startDataTaskWithCompletion:nil];
+	[basicRequest startWithCompletionHandler:nil progressHandler:nil];
 }
 
 - (void)downloadFile {
@@ -55,16 +66,18 @@
 }
 
 - (void)runJSONRequest {
-	WCIPTestConnectionRequest *jsonRequest = [[WCIPTestConnectionRequest alloc] init];
-	[jsonRequest startDataTaskWithCompletion:^(NSError *error, id object) {
+	WCJSONTestConnectionRequest *jsonRequest = [[WCJSONTestConnectionRequest alloc] init];
+	[jsonRequest startWithCompletionHandler:^(NSError *error, id object) {
 		self.textView1.text = [object description];
-	}];
+	} progressHandler:nil];
 }
 
 - (void)runPOSTRequest {
-	WCJSONPostConnectionRequest *postRequest = [[WCJSONPostConnectionRequest alloc] init];
-	[postRequest startDataTaskWithCompletion:^(NSError *error, id object) {
-		self.textView2.text = [object description];
+	WCPostConnectionRequest *postRequest = [[WCPostConnectionRequest alloc] initWithFile:[[NSBundle mainBundle] pathForResource:@"lorem-ipsum" ofType:@"txt"]];
+	[postRequest startWithCompletionHandler:^(NSError *error, id object) {
+		self.textView2.text = @"Done!";
+	} progressHandler:^(NSInteger bytesSoFar, NSInteger totalBytes, double progress) {
+		NSLog(@"Uploading progress: %f", progress);
 	}];
 }
 

@@ -8,6 +8,8 @@
 
 #import "WCConnectionRequest.h"
 
-@interface WCJSONPostConnectionRequest : WCJSONConnectionRequest
+@interface WCPostConnectionRequest : WCConnectionRequest
+
+- (instancetype)initWithFile:(NSString *)file;
 
 @end

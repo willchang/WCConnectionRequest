@@ -19,7 +19,7 @@
 @end
 
 @implementation WCConnectionRequest
-@dynamic isActive, duration;
+@dynamic isActive, duration, urlResponse;
 
 #pragma mark - ConnectionRequests / In Use
 
@@ -90,6 +90,12 @@
 	return _session;
 }
 
+#pragma mark - URL Response
+
+- (NSURLResponse *)urlResponse {
+	return self.sessionTask.response;
+}
+
 #pragma mark - HTTP method string
 
 - (NSString *)stringForHTTPMethod:(HTTPMethod)method {
@@ -117,16 +123,29 @@
 	_connectionIdentifier = [[self generateUUID] copy];
 }
 
-- (void)startDataTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler {
+- (void)startWithCompletionHandler:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler {
 	[self reset];
 	
 	NSURLRequest *request = [self request];
 	if (request) {
 		[self prepareStart];
-		
-		self.data = [NSMutableData data];
+	
 		self.completionHandler = completionHandler;
-		self.sessionTask = [self.session dataTaskWithRequest:request];
+		self.progressHandler = progressHandler;
+		
+		switch (self.httpMethod) {
+			case HTTPMethodGet:
+			case HTTPMethodDelete:
+				self.sessionTask = [self.session dataTaskWithRequest:request];
+				self.data = [NSMutableData data];
+				break;
+			case HTTPMethodPost:
+			case HTTPMethodPut:
+				self.sessionTask = [self.session uploadTaskWithRequest:request fromData:self.bodyData];
+				break;
+			default:
+				break;
+		}
 		
 		[self doStart:request];
 	} else {
@@ -155,31 +174,6 @@
 	}
 }
 
-- (void)startUploadTaskWithData:(NSData *)data orFile:(NSURL *)file completion:(void (^)(NSError *error))completion {
-	[self reset];
-	
-	NSURLRequest *request = [self request];
-	if (request) {
-		[self prepareStart];
-		
-		void (^completionHandler)(NSData * __nullable data, NSURLResponse * __nullable response, NSError * __nullable error) = ^(NSData * __nullable data, NSURLResponse * __nullable response, NSError * __nullable error) {
-			[self connectionFinishedWithResponse:response];
-		};
-		
-		if (data.length) {
-			self.sessionTask = [self.session uploadTaskWithRequest:request fromData:data completionHandler:completionHandler];
-		} else if (file) {
-			self.sessionTask = [self.session uploadTaskWithRequest:request fromFile:file completionHandler:completionHandler];
-		}
-
-		[self doStart:request];
-	} else {
-#if DEBUG
-		NSLog(@"Request is nil.");
-#endif
-	}
-}
-
 - (void)doStart:(NSURLRequest *)request {
 	[self.sessionTask resume];
 	[WCConnectionRequest addActiveConnectionRequest:self];
@@ -195,28 +189,28 @@
 
 #pragma mark - Finish
 
-- (void)connectionFinishedWithResponse:(NSURLResponse *)response {
+- (void)connectionFinished {
 	_dateFinished = [NSDate date];
-	_urlResponse = response;
 	[WCConnectionRequest removeActiveConnectionRequest:self];
 }
 
 #pragma mark - Reset/Cancel
 
 - (void)reset {
-	self.data = nil;
 	_dateStarted = nil;
 	_dateFinished = nil;
-	_urlResponse = nil;
 	_connectionIdentifier = nil;
 	[self.sessionTask cancel];
 	self.sessionTask = nil;
+	self.data = nil;
+	self.downloadedFileLocation = nil;
 	[WCConnectionRequest removeActiveConnectionRequest:self];
 }
 
 - (void)cancel {
 	[self logCancellationWithRequest:[self request]];
-	[self reset];
+	[self.sessionTask cancel];
+	[WCConnectionRequest removeActiveConnectionRequest:self];
 }
 
 #pragma mark - Is Active
@@ -259,10 +253,10 @@
 	NSMutableString *debugString = [NSMutableString string];
 	[debugString appendFormat:@"\n<<********************************************* Response %@\n", className];
 	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", _connectionIdentifier];
-	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[_urlResponse URL] absoluteString]];
-	if ([_urlResponse isKindOfClass:[NSHTTPURLResponse class]]) {
-		[debugString appendFormat:@"\nStatus:\n%ld\n", [(NSHTTPURLResponse *)_urlResponse statusCode]];
-		[debugString appendFormat:@"\nResponse Header Fields:\n%@\n", [(NSHTTPURLResponse *)_urlResponse allHeaderFields]];
+	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[self.urlResponse URL] absoluteString]];
+	if ([self.urlResponse isKindOfClass:[NSHTTPURLResponse class]]) {
+		[debugString appendFormat:@"\nStatus:\n%ld\n", [(NSHTTPURLResponse *)self.urlResponse statusCode]];
+		[debugString appendFormat:@"\nResponse Header Fields:\n%@\n", [(NSHTTPURLResponse *)self.urlResponse allHeaderFields]];
 	}
 	
 	NSString *parsedObjectString = nil;
@@ -368,26 +362,22 @@
 
 #pragma mark - NSURLSessionDelegate
 
-// Subclasses can implement delegate methods as needed.
+- (void)URLSession:(nonnull NSURLSession *)session didBecomeInvalidWithError:(nullable NSError *)error {
+	NSLog(@"URL session became invalid with error: %@", error);
+}
 
 #pragma mark - NSURLSessionTaskDelegate
 
-- (void)URLSession:(nonnull NSURLSession *)session dataTask:(nonnull NSURLSessionDataTask *)dataTask didReceiveData:(nonnull NSData *)data {
-	[self.data appendData:data];
-}
-
-- (void)URLSession:(nonnull NSURLSession *)session dataTask:(nonnull NSURLSessionDataTask *)dataTask didReceiveResponse:(nonnull NSURLResponse *)response completionHandler:(nonnull void (^)(NSURLSessionResponseDisposition))completionHandler {
-	_urlResponse = response;
-}
-
 - (void)URLSession:(nonnull NSURLSession *)session task:(nonnull NSURLSessionTask *)task didCompleteWithError:(nullable NSError *)error {
-	[self connectionFinishedWithResponse:task.response];
+	[self connectionFinished];
 	
 	__block id parsedObject = nil;
 	__block NSError *urlSessionError = error;
 	
 	if ([self.sessionTask isKindOfClass:[NSURLSessionDownloadTask class]]) {
 		parsedObject = self.downloadedFileLocation;
+	} else if ([self.sessionTask isKindOfClass:[NSURLSessionUploadTask class]]) {
+		
 	} else if (error == nil) {
 		parsedObject = [self parseCompletionData:self.data];
 	}
@@ -418,13 +408,17 @@
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
 	if (self.progressHandler) {
-		self.progressHandler(totalBytesSent, totalBytesExpectedToSend, (double)totalBytesSent / (double)totalBytesExpectedToSend);
+		dispatch_async(dispatch_get_main_queue(), ^{
+			self.progressHandler(totalBytesSent, totalBytesExpectedToSend, (double)totalBytesSent / (double)totalBytesExpectedToSend);
+		});
 	}
 }
 
 #pragma mark - NSURLSessionDataDelegate
 
-// Subclasses can implement delegate methods as needed.
+- (void)URLSession:(nonnull NSURLSession *)session dataTask:(nonnull NSURLSessionDataTask *)dataTask didReceiveData:(nonnull NSData *)data {
+	[self.data appendData:data];
+}
 
 #pragma mark - NSURLSessionDownloadDelegate
 

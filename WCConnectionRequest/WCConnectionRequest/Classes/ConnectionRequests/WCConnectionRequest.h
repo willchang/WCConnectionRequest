@@ -35,9 +35,8 @@ typedef enum {
  ConnectionRequest protocol. A general list of methods that a ConnectionRequest object and its subclasses implements. No delegate is required.
  */
 @protocol WCConnectionRequestProtocol <NSObject>
-- (void)startDataTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler;
+- (void)startWithCompletionHandler:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
 - (void)startDownloadTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
-- (void)startUploadTaskWithData:(NSData *)data orFile:(NSURL *)file completion:(void (^)(NSError *error))completion;
 - (void)cancel;
 
 /*
@@ -74,9 +73,8 @@ typedef enum {
 + (void)cancelConnectionsOfClass:(Class)connectionRequestClass;
 + (void)cancelAllConnections;
 
-- (void)startDataTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler;
+- (void)startWithCompletionHandler:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
 - (void)startDownloadTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
-- (void)startUploadTaskWithData:(NSData *)data orFile:(NSURL *)file completion:(void (^)(NSError *error))completion;
 
 - (void)cancel;
 

@@ -8,6 +8,6 @@
 
 #import "WCConnectionRequest.h"
 
-@interface WCIPTestConnectionRequest : WCJSONConnectionRequest
+@interface WCJSONTestConnectionRequest : WCJSONConnectionRequest
 
 @end
