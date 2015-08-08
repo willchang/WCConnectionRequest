@@ -22,23 +22,16 @@
 	[self setupScrollView];
 	
 	// Basic request
-//	[self runBasicRequest];
+	[self runBasicRequest];
 	
 	// Downloading a file
-//	[self downloadFile];
+	[self downloadFile];
 	
 	// Request that returns JSON
-//	[self runJSONRequest];
+	[self runJSONRequest];
 	
 	// POST request
 	[self runPOSTRequest];
-	
-//	NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:self delegateQueue:nil];
-//	[[session dataTaskWithURL:[NSURL URLWithString:@"https://api.github.com/users/willchang/repos"]] resume];
-}
-
-- (void)URLSession:(nonnull NSURLSession *)session task:(nonnull NSURLSessionTask *)task didCompleteWithError:(nullable NSError *)error {
-	NSLog(@"completed");
 }
 
 - (void)setupScrollView {
