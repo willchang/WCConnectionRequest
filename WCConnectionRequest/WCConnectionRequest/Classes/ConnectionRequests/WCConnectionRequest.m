@@ -377,7 +377,7 @@
 	if ([self.sessionTask isKindOfClass:[NSURLSessionDownloadTask class]]) {
 		parsedObject = self.downloadedFileLocation;
 	} else if ([self.sessionTask isKindOfClass:[NSURLSessionUploadTask class]]) {
-		
+		parsedObject = nil;
 	} else if (error == nil) {
 		parsedObject = [self parseCompletionData:self.data];
 	}
