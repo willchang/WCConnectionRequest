@@ -121,6 +121,7 @@
 - (void)prepareStart {
 	_dateStarted = [NSDate date];
 	_connectionIdentifier = [[self generateUUID] copy];
+	self.data = [[NSMutableData alloc] init];
 }
 
 - (void)startWithCompletionHandler:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler {
@@ -255,7 +256,7 @@
 	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", _connectionIdentifier];
 	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[self.urlResponse URL] absoluteString]];
 	if ([self.urlResponse isKindOfClass:[NSHTTPURLResponse class]]) {
-		[debugString appendFormat:@"\nStatus:\n%ld\n", [(NSHTTPURLResponse *)self.urlResponse statusCode]];
+		[debugString appendFormat:@"\nStatus:\n%d\n", (NSInteger)[(NSHTTPURLResponse *)self.urlResponse statusCode]];
 		[debugString appendFormat:@"\nResponse Header Fields:\n%@\n", [(NSHTTPURLResponse *)self.urlResponse allHeaderFields]];
 	}
 	
@@ -266,7 +267,7 @@
 		parsedObjectString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 		
 		if (parsedObjectString == nil) {
-			parsedObjectString = [NSString stringWithFormat:@"NSData with length %ld", ((NSData *)data).length];
+			parsedObjectString = [NSString stringWithFormat:@"NSData with length %d", (NSInteger)((NSData *)data).length];
 		}
 	} else {
 		parsedObjectString = [data description];
@@ -376,8 +377,6 @@
 	
 	if ([self.sessionTask isKindOfClass:[NSURLSessionDownloadTask class]]) {
 		parsedObject = self.downloadedFileLocation;
-	} else if ([self.sessionTask isKindOfClass:[NSURLSessionUploadTask class]]) {
-		parsedObject = nil;
 	} else if (error == nil) {
 		parsedObject = [self parseCompletionData:self.data];
 	}
@@ -385,17 +384,6 @@
 	[self logResponseWithRequest:task.currentRequest data:self.data parsedObject:parsedObject error:error];
 	
 	dispatch_async(dispatch_get_main_queue(), ^{
-		/*
-		// Broadcast notification that this API call finished
-		NSString *notificationName = [NSStringFromClass([self class]) stringByAppendingString:@"DidFinishNotification"];
-		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-								  self, @"WCConnectionRequest",
-								  parsedObject, @"ParsedObject",
-								  nil];
-		NSNotification *finishedNotification = [NSNotification notificationWithName:notificationName object:nil userInfo:userInfo];
-		[[NSNotificationCenter defaultCenter] postNotification:finishedNotification];
-		 */
-		
 		if (self.completionHandler) {
 			if ([parsedObject isKindOfClass:[NSError class]]) {
 				urlSessionError = parsedObject;
@@ -409,7 +397,7 @@
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didSendBodyData:(int64_t)bytesSent totalBytesSent:(int64_t)totalBytesSent totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend {
 	if (self.progressHandler) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-			self.progressHandler(totalBytesSent, totalBytesExpectedToSend, (double)totalBytesSent / (double)totalBytesExpectedToSend);
+			self.progressHandler((NSInteger)totalBytesSent, (NSInteger)totalBytesExpectedToSend, (double)totalBytesSent / (double)totalBytesExpectedToSend);
 		});
 	}
 }
@@ -429,7 +417,7 @@
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
 	if (self.progressHandler) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-			self.progressHandler(totalBytesWritten, totalBytesExpectedToWrite, (double)totalBytesWritten / (double)totalBytesExpectedToWrite);
+			self.progressHandler((NSInteger)totalBytesWritten, (NSInteger)totalBytesExpectedToWrite, (double)totalBytesWritten / (double)totalBytesExpectedToWrite);
 		});
 	}
 }
@@ -444,7 +432,7 @@
 
 - (id)parseCompletionData:(NSData *)data {
 	NSError *error = nil;
-	id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+	id object = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:&error];
 	if (error != nil) {
 		object = error;
 	}
