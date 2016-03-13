@@ -239,13 +239,15 @@
 - (void)logRequest:(NSURLRequest *)request {
 #if DEBUG
 	NSString *className = NSStringFromClass([self class]);
+	NSMutableDictionary *headers = [[NSMutableDictionary alloc] initWithDictionary:self.session.configuration.HTTPAdditionalHeaders];
+	[headers addEntriesFromDictionary:[request allHTTPHeaderFields]];
 	
 	NSMutableString *debugString = [NSMutableString string];
 	[debugString appendFormat:@"\n<<---------------------------------------------- Request %@\n", className];
 	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", _connectionIdentifier];
 	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[request URL] absoluteString]];
 	if ([request allHTTPHeaderFields].count) {
-		[debugString appendFormat:@"\nRequest Header Fields:\n%@\n", [request allHTTPHeaderFields]];
+		[debugString appendFormat:@"\nRequest Header Fields:\n%@\n", headers];
 	}
 	NSData *bodyData = [request HTTPBody];
 	[debugString appendFormat:@"\nRequest Body:\n%@\n", (bodyData != nil ? [[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding] : nil)];
@@ -263,7 +265,7 @@
 	[debugString appendFormat:@"\nConnection Identifier:\n%@\n", _connectionIdentifier];
 	[debugString appendFormat:@"\nURL:\n%@ %@\n", [request HTTPMethod], [[self.urlResponse URL] absoluteString]];
 	if ([self.urlResponse isKindOfClass:[NSHTTPURLResponse class]]) {
-		[debugString appendFormat:@"\nStatus:\n%d\n", (NSInteger)[(NSHTTPURLResponse *)self.urlResponse statusCode]];
+		[debugString appendFormat:@"\nStatus:\n%ld\n", (long)[(NSHTTPURLResponse *)self.urlResponse statusCode]];
 		[debugString appendFormat:@"\nResponse Header Fields:\n%@\n", [(NSHTTPURLResponse *)self.urlResponse allHeaderFields]];
 	}
 	
@@ -274,7 +276,7 @@
 		parsedObjectString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 		
 		if (parsedObjectString == nil) {
-			parsedObjectString = [NSString stringWithFormat:@"NSData with length %d", (NSInteger)((NSData *)data).length];
+			parsedObjectString = [NSString stringWithFormat:@"NSData with length %ld", (long)((NSData *)data).length];
 		}
 	} else {
 		parsedObjectString = [data description];
