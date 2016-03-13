@@ -17,65 +17,46 @@
 /*
  Completion blocks.
  */
-typedef void (^WCConnectionRequestCompletionHandler)(NSError *error, id object);
+typedef void (^WCConnectionRequestCompletionHandler)(NSError * _Nullable error, id _Nullable object);
 typedef void (^WCConnectionRequestProgressHandler)(NSInteger bytesSoFar, NSInteger totalBytes, double progress);
-
 
 /*
  HTTP methods.
  */
-typedef enum {
+typedef NS_ENUM(NSInteger, HTTPMethod) {
 	HTTPMethodGet,
 	HTTPMethodPost,
 	HTTPMethodPut,
 	HTTPMethodDelete,
-} HTTPMethod;
-
-/*
- ConnectionRequest protocol. A general list of methods that a ConnectionRequest object and its subclasses implements. No delegate is required.
- */
-@protocol WCConnectionRequestProtocol <NSObject>
-- (void)startWithCompletionHandler:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
-- (void)startDownloadTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
-- (void)cancel;
-
-/*
- Subclasses must implement the required method below and any optional methods.
- */
-@required
-- (NSURL *)url;
-
-@optional
-- (HTTPMethod)httpMethod;
-- (NSMutableURLRequest *)request;
-- (NSDictionary *)requestHeaderFields;
-- (NSData *)bodyData;
-- (id)parseCompletionData:(NSData *)data;
-- (void)handleResultObject:(id)resultObject;
-- (NSError *)parseError:(NSError *)error;
-- (void)handleConnectionError:(NSError *)error;
-@end
+};
 
 /*
  Connection Request. Can be used generally with WCBasicConnectionRequest or by subclassing for separate API calls.
  */
-@interface WCConnectionRequest : NSObject <WCConnectionRequestProtocol, NSURLSessionDelegate, NSURLSessionTaskDelegate, NSURLSessionDataDelegate, NSURLSessionDownloadDelegate>
+@interface WCConnectionRequest : NSObject <NSURLSessionDelegate, NSURLSessionTaskDelegate, NSURLSessionDataDelegate, NSURLSessionDownloadDelegate>
 
-@property (nonatomic, readonly) NSURLResponse *urlResponse;
-@property (nonatomic, readonly) NSDate *dateStarted;
-@property (nonatomic, readonly) NSDate *dateFinished;
+@property (nonatomic, readonly, nullable) NSURLResponse *urlResponse;
+@property (nonatomic, readonly, nullable) NSDate *dateStarted;
+@property (nonatomic, readonly, nullable) NSDate *dateFinished;
 @property (nonatomic, readonly) BOOL isActive;								// Flag for whether the connection is currently in progress
 @property (nonatomic, readonly) NSTimeInterval duration;					// Duration of connection
-@property (nonatomic, readonly) NSString *connectionIdentifier;				// Unique identifier that is created when 'start' is called
-@property (nonatomic, strong) NSURLSession *session;
+@property (nonatomic, readonly, nullable) NSString *connectionIdentifier;	// Unique identifier that is created when 'start' is called
+@property (nonatomic, strong, nullable) NSURLSession *session;
 
-+ (BOOL)connectionRequestInUse:(Class)connectionRequestClass;
-+ (void)cancelConnectionsOfClass:(Class)connectionRequestClass;
+- (nonnull NSURL *) url;
+- (HTTPMethod)HTTPMethod;
+- (nonnull NSMutableURLRequest *)request;
+- (nullable NSDictionary *)requestHeaderFields;
+- (nullable NSData *)bodyData;
+- (nullable id)parseCompletionData:(nullable NSData *)data;
+- (nullable NSError *)parseError:(nullable NSError *)error;
+
+- (void)startWithCompletionHandler:(nullable WCConnectionRequestCompletionHandler)completionHandler progressHandler:(nullable WCConnectionRequestProgressHandler)progressHandler;
+- (void)startDownloadTaskWithCompletion:(nullable WCConnectionRequestCompletionHandler)completionHandler progressHandler:(nullable WCConnectionRequestProgressHandler)progressHandler;
+
++ (BOOL)connectionRequestInUse:(nonnull Class)connectionRequestClass;
++ (void)cancelConnectionsOfClass:(nonnull Class)connectionRequestClass;
 + (void)cancelAllConnections;
-
-- (void)startWithCompletionHandler:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
-- (void)startDownloadTaskWithCompletion:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler;
-
 - (void)cancel;
 
 @end
@@ -93,6 +74,6 @@ typedef enum {
  */
 @interface WCBasicConnectionRequest : WCConnectionRequest
 
-@property (nonatomic, strong) NSURLRequest *request;
+@property (nonatomic, strong, nonnull) NSURLRequest *request;
 
 @end

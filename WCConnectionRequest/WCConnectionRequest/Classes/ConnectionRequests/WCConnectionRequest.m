@@ -99,7 +99,8 @@
 #pragma mark - HTTP method string
 
 - (NSString *)stringForHTTPMethod:(HTTPMethod)method {
-	NSString *string = @"GET";
+	NSString *string = nil;
+	
 	switch (method) {
 		case HTTPMethodPost:
 			string = @"POST";
@@ -109,7 +110,9 @@
 			break;
 		case HTTPMethodDelete:
 			string = @"DELETE";
+			break;
 		default:
+			string = @"GET";
 			break;
 	}
 	
@@ -124,7 +127,11 @@
 	self.data = [[NSMutableData alloc] init];
 }
 
-- (void)startWithCompletionHandler:(WCConnectionRequestCompletionHandler)completionHandler progressHandler:(WCConnectionRequestProgressHandler)progressHandler {
+- (void)startWithCompletionHandler:(nullable WCConnectionRequestCompletionHandler)completionHandler {
+	[self startWithCompletionHandler:completionHandler progressHandler:nil];
+}
+
+- (void)startWithCompletionHandler:(nullable WCConnectionRequestCompletionHandler)completionHandler progressHandler:(nullable WCConnectionRequestProgressHandler)progressHandler {
 	[self reset];
 	
 	NSURLRequest *request = [self request];
@@ -134,7 +141,7 @@
 		self.completionHandler = completionHandler;
 		self.progressHandler = progressHandler;
 		
-		switch (self.httpMethod) {
+		switch (self.HTTPMethod) {
 			case HTTPMethodGet:
 			case HTTPMethodDelete:
 				self.sessionTask = [self.session dataTaskWithRequest:request];
@@ -310,7 +317,7 @@
 
 #pragma mark - OPTIONAL METHODS TO BE IMPLEMENTED BY SUBCLASS
 
-- (HTTPMethod)httpMethod {
+- (HTTPMethod)HTTPMethod {
 	// Default implementation
 	return HTTPMethodGet;
 }
@@ -328,7 +335,7 @@
 		request = [NSMutableURLRequest requestWithURL:url];
 		
 		// Set method
-		NSString *methodString = [self stringForHTTPMethod:[self httpMethod]];
+		NSString *methodString = [self stringForHTTPMethod:[self HTTPMethod]];
 		[request setHTTPMethod:methodString];
 		
 		// Set body data
