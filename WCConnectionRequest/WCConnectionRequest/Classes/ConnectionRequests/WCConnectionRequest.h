@@ -23,11 +23,11 @@ typedef void (^WCConnectionRequestProgressHandler)(NSInteger bytesSoFar, NSInteg
 /*
  HTTP methods.
  */
-typedef NS_ENUM(NSInteger, HTTPMethod) {
-	HTTPMethodGet,
-	HTTPMethodPost,
-	HTTPMethodPut,
-	HTTPMethodDelete,
+typedef NS_ENUM(NSInteger, HTTPMethodType) {
+	HTTPMethodTypeGet,
+	HTTPMethodTypePost,
+	HTTPMethodTypePut,
+	HTTPMethodTypeDelete
 };
 
 /*
@@ -44,7 +44,7 @@ typedef NS_ENUM(NSInteger, HTTPMethod) {
 @property (nonatomic, strong, nullable) NSURLSession *session;
 
 - (nonnull NSURL *) url;
-- (HTTPMethod)HTTPMethod;
+- (HTTPMethodType)HTTPMethod;
 - (nonnull NSMutableURLRequest *)request;
 - (nullable NSDictionary *)requestHeaderFields;
 - (nullable NSData *)bodyData;

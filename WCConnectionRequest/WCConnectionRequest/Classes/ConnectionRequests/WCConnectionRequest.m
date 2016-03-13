@@ -98,17 +98,17 @@
 
 #pragma mark - HTTP method string
 
-- (NSString *)stringForHTTPMethod:(HTTPMethod)method {
+- (NSString *)stringForHTTPMethod:(HTTPMethodType)method {
 	NSString *string = nil;
 	
 	switch (method) {
-		case HTTPMethodPost:
+		case HTTPMethodTypePost:
 			string = @"POST";
 			break;
-		case HTTPMethodPut:
+		case HTTPMethodTypePut:
 			string = @"PUT";
 			break;
-		case HTTPMethodDelete:
+		case HTTPMethodTypeDelete:
 			string = @"DELETE";
 			break;
 		default:
@@ -142,13 +142,13 @@
 		self.progressHandler = progressHandler;
 		
 		switch (self.HTTPMethod) {
-			case HTTPMethodGet:
-			case HTTPMethodDelete:
+			case HTTPMethodTypeGet:
+			case HTTPMethodTypeDelete:
 				self.sessionTask = [self.session dataTaskWithRequest:request];
 				self.data = [NSMutableData data];
 				break;
-			case HTTPMethodPost:
-			case HTTPMethodPut:
+			case HTTPMethodTypePost:
+			case HTTPMethodTypePut:
 				self.sessionTask = [self.session uploadTaskWithRequest:request fromData:self.bodyData];
 				break;
 			default:
@@ -317,9 +317,9 @@
 
 #pragma mark - OPTIONAL METHODS TO BE IMPLEMENTED BY SUBCLASS
 
-- (HTTPMethod)HTTPMethod {
+- (HTTPMethodType)HTTPMethod {
 	// Default implementation
-	return HTTPMethodGet;
+	return HTTPMethodTypeGet;
 }
 
 - (NSDictionary *)requestHeaderFields {
